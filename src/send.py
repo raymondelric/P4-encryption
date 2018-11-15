@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+'''
 import argparse
 import sys
 import socket
@@ -7,7 +8,22 @@ import struct
 
 from scapy.all import sendp, send, get_if_list, get_if_hwaddr
 from scapy.all import Packet
-from scapy.all import Ether, IP, UDP, TCP
+from scapy.all import Ether, IP, UDP, TCP, Raw
+'''
+
+import argparse
+import sys
+import socket
+import random
+import struct
+
+from scapy.all import sendp, send, get_if_list, get_if_hwaddr, bind_layers
+from scapy.all import Packet, Raw
+from scapy.all import Ether, IP, TCP, UDP
+from scapy.fields import *
+import readline
+
+
 
 def get_if():
     ifs=get_if_list()
@@ -21,6 +37,9 @@ def get_if():
         exit(1)
     return iface
 
+class Payload(Packet):
+	fields_desc = [ IntField("data", int(sys.argv[2])) ]
+
 def main():
 
     if len(sys.argv)<3:
@@ -32,7 +51,7 @@ def main():
 
     print "sending on interface %s to %s" % (iface, str(addr))
     pkt =  Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff')
-    pkt = pkt /IP(dst=addr) / TCP(dport=1234, sport=random.randint(49152,65535)) / sys.argv[2]
+    pkt = pkt /IP(dst=addr) / TCP(dport=1234, sport=random.randint(12345,54321)) / Payload()#sys.argv[2]
     pkt.show2()
     sendp(pkt, iface=iface, verbose=False)
 

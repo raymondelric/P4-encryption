@@ -33,6 +33,26 @@ header ipv4_t {
     ip4Addr_t dstAddr;
 }
 
+header tcp_t {
+
+    bit<16> srcPort;
+    bit<16> dstPort;
+    bit<32> seqNo;
+    bit<32> ackNo;
+    bit<4>  dataOffset;
+    bit<3>  res;
+    bit<3>  ecn;
+    bit<6>  cntl;
+    bit<16> window;
+    bit<16> checksum;
+    bit<16> urgentPtr;
+
+}
+
+header payload_t{
+	bit<32> data;
+}
+
 struct metadata {
     /* empty */
 }
@@ -40,7 +60,10 @@ struct metadata {
 struct headers {
     ethernet_t   ethernet;
     ipv4_t       ipv4;
+	tcp_t		 tcp;
+	payload_t	 payload;
 }
+
 
 /*************************************************************************
 *********************** P A R S E R  ***********************************
@@ -65,6 +88,8 @@ parser MyParser(packet_in packet,
 
     state parse_ipv4 {
         packet.extract(hdr.ipv4);
+        packet.extract(hdr.tcp);
+		packet.extract(hdr.payload);
         transition accept;
     }
 
@@ -86,11 +111,15 @@ control MyVerifyChecksum(inout headers hdr, inout metadata meta) {
 control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
-    action drop() {
+    
+	bit<32> secret_key = 4536;
+
+	action drop() {
         mark_to_drop();
     }
     
     action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
+		hdr.payload.data = hdr.payload.data ^ secret_key;
         standard_metadata.egress_spec = port;
         hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
         hdr.ethernet.dstAddr = dstAddr;
@@ -159,6 +188,8 @@ control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.ethernet);
         packet.emit(hdr.ipv4);
+		packet.emit(hdr.tcp);
+		packet.emit(hdr.payload);
     }
 }
 
