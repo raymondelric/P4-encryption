@@ -51,6 +51,7 @@ header tcp_t {
 
 header payload_t{
 	bit<32> data;
+	bit<32>  encrypt;
 }
 
 struct metadata {
@@ -117,9 +118,14 @@ control MyIngress(inout headers hdr,
 	action drop() {
         mark_to_drop();
     }
+
+
+	action encrypt(){
+	
+		hdr.payload.data = hdr.payload.data + secret_key;
+	}
     
     action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
-		hdr.payload.data = hdr.payload.data ^ secret_key;
         standard_metadata.egress_spec = port;
         hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
         hdr.ethernet.dstAddr = dstAddr;
@@ -140,6 +146,12 @@ control MyIngress(inout headers hdr,
     }
     
     apply {
+
+		if (hdr.payload.encrypt == 1){
+			encrypt();
+			hdr.payload.encrypt = 0;
+		}
+
         if (hdr.ipv4.isValid()) {
             ipv4_lpm.apply();
         }

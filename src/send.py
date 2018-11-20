@@ -38,7 +38,7 @@ def get_if():
     return iface
 
 class Payload(Packet):
-	fields_desc = [ IntField("data", int(sys.argv[2])) ]
+	fields_desc = [ IntField("data", int(sys.argv[2])), IntField("encrypt", 1)]
 
 def main():
 
@@ -52,6 +52,7 @@ def main():
     print "sending on interface %s to %s" % (iface, str(addr))
     pkt =  Ether(src=get_if_hwaddr(iface), dst='ff:ff:ff:ff:ff:ff')
     pkt = pkt /IP(dst=addr) / TCP(dport=1234, sport=random.randint(12345,54321)) / Payload()#sys.argv[2]
+    hexdump(pkt)
     pkt.show2()
     sendp(pkt, iface=iface, verbose=False)
 

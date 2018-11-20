@@ -20,7 +20,7 @@ def get_if():
         print "Cannot find eth0 interface"
         exit(1)
     return iface
-
+'''
 class IPOption_MRI(IPOption):
     name = "MRI"
     option = 31
@@ -33,12 +33,23 @@ class IPOption_MRI(IPOption):
                                    [],
                                    IntField("", 0),
                                    length_from=lambda pkt:pkt.count*4) ]
+'''
+class Payload(Packet):
+    fields_desc = [IntField("data", None), IntField("encrpty", None)]
+
+
 def handle_pkt(pkt):
     if TCP in pkt and pkt[TCP].dport == 1234:
         print "got a packet"
+        hexdump(pkt)
         pkt.show2()
-    #    hexdump(pkt)
         sys.stdout.flush()
+        s = pkt[Raw].load[0:4]#[:len(pkt[Raw].load)//2]
+	print(str(s))
+        #tmp = s.split('\x')
+	#print(tmp)
+        #s = "0x" + ''.join(tmp)
+        #print(pkt[Payload].encrypt)
 
 
 def main():
