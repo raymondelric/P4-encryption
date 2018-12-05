@@ -51,11 +51,14 @@ header tcp_t {
 
 header payload_t{
 	bit<32> data;
-	bit<32>  encrypt;
+	bit<32> encrypt;
+	bit<32> type;
+	bit<32> index;
 }
 
 struct metadata {
     /* empty */
+	
 }
 
 struct headers {
@@ -113,16 +116,45 @@ control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
     
-	bit<32> secret_key = 4536;
+	bit<32> secret_key;
+	register<bit<32>>((bit<32>) 4) keys;
+
+	action initial_key(){
+		keys.write((bit<32>) 0,(bit<32>) 12345);
+		keys.write((bit<32>) 1,(bit<32>) 2345);
+		keys.write((bit<32>) 2,(bit<32>) 4536);
+		keys.write((bit<32>) 3,(bit<32>) 89735);
+	}
+		
 
 	action drop() {
         mark_to_drop();
     }
 
+	action encrypt_xor(){
+		keys.read(secret_key, hdr.payload.index);
+		hdr.payload.data = hdr.payload.data ^ secret_key;
+	}
 
-	action encrypt(){
-	
+	action encrypt_caesar(){
+		keys.read(secret_key, hdr.payload.index);
 		hdr.payload.data = hdr.payload.data + secret_key;
+	}
+
+	action encrypt_feistel(){
+		keys.read(secret_key, hdr.payload.index);
+		bit<32> left = hdr.payload.data >> 16;
+		bit<32> right = hdr.payload.data & (bit<32>) 65535;
+
+		bit<32> new_left = right;
+		bit<32> new_right = left ^ secret_key ^ right;
+		
+		keys.read(secret_key, hdr.payload.index+1);
+		right = new_right;
+		left = new_right ^ new_left ^ secret_key;
+
+		hdr.payload.data = (left << 16) | right;
+		
 	}
     
     action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
@@ -146,9 +178,22 @@ control MyIngress(inout headers hdr,
     }
     
     apply {
+		bit<32> key;
+		keys.read(key, (bit<32>) 0);
+		if (key == 0){
+			initial_key();
+		}
 
 		if (hdr.payload.encrypt == 1){
-			encrypt();
+			if (hdr.payload.encrypt == 0){
+				encrypt_xor();
+			}
+			else if (hdr.payload.encrypt == 1){
+				encrypt_caesar();
+			}
+			else{
+				encrypt_feistel();
+			}
 			hdr.payload.encrypt = 0;
 		}
 

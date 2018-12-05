@@ -6,7 +6,7 @@ import os
 from scapy.all import sniff, sendp, hexdump, get_if_list, get_if_hwaddr
 from scapy.all import Packet, IPOption
 from scapy.all import ShortField, IntField, LongField, BitField, FieldListField, FieldLenField
-from scapy.all import IP, TCP, UDP, Raw
+from scapy.all import IP, TCP, UDP
 from scapy.layers.inet import _IPOption_HDR
 
 def get_if():
@@ -35,17 +35,18 @@ class IPOption_MRI(IPOption):
                                    length_from=lambda pkt:pkt.count*4) ]
 '''
 class Payload(Packet):
-    fields_desc = [IntField("data", None), IntField("encrpty", None)]
+    fields_desc = [IntField("data", None), IntField("encrypt", None), IntField("type", None), IntField("index", None)]
 
 
 def handle_pkt(pkt):
     if TCP in pkt and pkt[TCP].dport == 1234:
         print "got a packet"
         hexdump(pkt)
-        pkt.show2()
+        pkt.show()
+        print(pkt.summary())
         sys.stdout.flush()
-        s = pkt[Raw].load[0:4]#[:len(pkt[Raw].load)//2]
-	print(str(s))
+        #s = pkt[Raw].load[0:4]#[:len(pkt[Raw].load)//2]
+	#print(str(s))
         #tmp = s.split('\x')
 	#print(tmp)
         #s = "0x" + ''.join(tmp)
@@ -53,8 +54,13 @@ def handle_pkt(pkt):
 
 
 def main():
-    ifaces = filter(lambda i: 'eth' in i, os.listdir('/sys/class/net/'))
+    '''ifaces = filter(lambda i: 'eth' in i, os.listdir('/sys/class/net/'))
     iface = ifaces[0]
+    print "sniffing on %s" % iface
+    sys.stdout.flush()
+    sniff(iface = iface,
+          prn = lambda x: handle_pkt(x))'''
+    iface = get_if()
     print "sniffing on %s" % iface
     sys.stdout.flush()
     sniff(iface = iface,
