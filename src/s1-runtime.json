@@ -1,7 +1,7 @@
 {
   "target": "bmv2",
-  "p4info": "build/basic.p4info",
-  "bmv2_json": "build/basic.json",
+  "p4info": "build/switch.p4info",
+  "bmv2_json": "build/switch.json",
   "table_entries": [
     {
       "table": "MyIngress.ipv4_lpm",
