@@ -3,7 +3,7 @@ import sys
 import struct
 import os
 
-from scapy.all import sniff, sendp, hexdump, get_if_list, get_if_hwaddr
+from scapy.all import sniff, sendp, hexdump, get_if_list, get_if_hwaddr, bind_layers
 from scapy.all import Packet, IPOption
 from scapy.all import ShortField, IntField, LongField, BitField, FieldListField, FieldLenField
 from scapy.all import IP, TCP, UDP
@@ -37,6 +37,8 @@ class IPOption_MRI(IPOption):
 class Payload(Packet):
     fields_desc = [IntField("data", None), IntField("encrypt", None), IntField("type", None), IntField("index", None)]
 
+bind_layers(TCP, Payload, dport=1234)
+
 
 def handle_pkt(pkt):
     if TCP in pkt and pkt[TCP].dport == 1234:
@@ -46,6 +48,7 @@ def handle_pkt(pkt):
         print(pkt.summary())
         sys.stdout.flush()
         #s = pkt[Raw].load[0:4]#[:len(pkt[Raw].load)//2]
+        #print(pkt[Payload].data - 12345)
 	#print(str(s))
         #tmp = s.split('\x')
 	#print(tmp)

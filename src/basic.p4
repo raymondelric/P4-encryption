@@ -133,7 +133,8 @@ control MyIngress(inout headers hdr,
 
 	action encrypt_xor(){
 		keys.read(secret_key, hdr.payload.index);
-		hdr.payload.data = hdr.payload.data ^ secret_key;
+		bit<32> tmp = hdr.payload.data ^ secret_key;
+		hdr.payload.data = tmp;
 	}
 
 	action encrypt_caesar(){
@@ -185,10 +186,10 @@ control MyIngress(inout headers hdr,
 		}
 
 		if (hdr.payload.encrypt == 1){
-			if (hdr.payload.encrypt == 0){
+			if (hdr.payload.type == 0){
 				encrypt_xor();
 			}
-			else if (hdr.payload.encrypt == 1){
+			else if (hdr.payload.type == 1){
 				encrypt_caesar();
 			}
 			else{

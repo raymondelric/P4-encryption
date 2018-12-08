@@ -40,6 +40,8 @@ def get_if():
 class Payload(Packet):
 	fields_desc = [ IntField("data", int(sys.argv[2])), IntField("encrypt", 1), IntField("type", int(sys.argv[3])), IntField("index", int(sys.argv[4]))]
 
+bind_layers(TCP, Payload, dport=1234)
+
 def main():
 
     if len(sys.argv)<3:
